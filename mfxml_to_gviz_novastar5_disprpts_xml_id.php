@@ -34,6 +34,7 @@ $silent_debug_arg = "false"; //false is the official default
 $output_format_arg = "json"; //"json" is the official default so it always works with gviz
 $output_gv_type = "table"; //"table" is the official default - no restrictions on column order or column types on tables
 $output_type = "all"; //"all" is the official default
+$notempty_arg = "false"; //false is the official default
 
 $category_axis_label = ""; //"" is the official default
 $series_axis_label = ""; //"" is the official default
@@ -159,6 +160,14 @@ switch ($output_type) {
 	case 'stagethreshold':
 	default:
 }
+// get the notempty arg
+$notempty_arg = getargs ("notempty",$notempty_arg);
+if (strlen(trim($notempty_arg))) {
+	$notempty = strtobool($notempty_arg);
+} else {
+	$notempty = false;
+}
+if ($debug) echo "notempty arg: $notempty_arg<br>";
 // other args
 $category_axis_label = getargs ("category_axis_label",$category_axis_label);
 $series_axis_label = getargs ("series_axis_label",$series_axis_label);
