@@ -26,7 +26,7 @@
  */
 include 'mfxml_to_wfxml_novastar5_disprpts_xml_ID.php';
 include 'wfxml_to_jsonarray_novastar5_disprpts_xml_id.php';
-function mfxml_to_jsonarray_novastar5_disprpts_xml_id ($id,$output_type='all',$output_format='json',$output_gv_type='table') {
+function mfxml_to_jsonarray_novastar5_disprpts_xml_id ($id,$output_type='all',$output_format='json',$output_gv_type='table',$notempty=FALSE) {
 	/*
 	 * get the mf xml from novastar O:-)
 	 */
@@ -35,7 +35,7 @@ function mfxml_to_jsonarray_novastar5_disprpts_xml_id ($id,$output_type='all',$o
 	/*
 	 * convert it to a json array
 	 */
-	$jsonarray = wfxml_to_jsonarray_novastar5_disprpts_xml_id(mfxml_to_wfxml_novastar5_disprpts_xml_ID ($mfxml_string),$output_type,$output_format,$output_gv_type);
+	$jsonarray = wfxml_to_jsonarray_novastar5_disprpts_xml_id(mfxml_to_wfxml_novastar5_disprpts_xml_ID ($mfxml_string),$output_type,$output_format,$output_gv_type,$notempty);
 	switch ($output_type) {
 		case 'stagethreshold':
 			/*

@@ -21,7 +21,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-function wfxml_to_jsonarray_novastar5_disprpts_xml_id ($wfxml_string,$output_type='all',$output_format='json',$output_gv_type='table') {
+function wfxml_to_jsonarray_novastar5_disprpts_xml_id ($wfxml_string,$output_type='all',$output_format='json',$output_gv_type='table',$notempty=FALSE) {
 	/*
 	 * read the incoming xml and populate the outgoing array
 	 */

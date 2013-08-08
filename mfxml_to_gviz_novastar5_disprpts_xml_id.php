@@ -194,7 +194,7 @@ switch ($output_type) {
 	default:
 }
 $datatable = array();
-$datatable = mfxml_to_jsonarray_novastar5_disprpts_xml_id($station_id,$output_type,$output_format,$output_gv_type);
+$datatable = mfxml_to_jsonarray_novastar5_disprpts_xml_id($station_id,$output_type,$output_format,$output_gv_type,$notempty);
 $table_column_count = count($datatable['cols'])-1;
 $table_row_count = count($datatable['rows']);
 switch ($output_format) {
