@@ -123,43 +123,56 @@ function wfxml_to_jsonarray_novastar5_disprpts_xml_id ($wfxml_string,$output_typ
 				++$field_counter;
 			}
 			++$record_counter;
-		} // foreach( $wfxml as $row ) 
+		} // foreach( $wfxml as $row )
+		/*
+		 * check if we need to fill an empty array structure
+		 */ 
 		if ($notempty) {
-                        if (! $record_counter) {
-                                /*
-                                 * uh oh - no records were in the XML string
-                                 * do the json set up again, but this time with a fake record:
-                                 *   current time stamp and a null value
-                                 * note that this really only works with flow/stage/stagethreshold types
-                                 *   because those are the only types where we know what the fields should be
-                                 * but make up some fields for the other types so it still passes something back in the array
-                                 */
-                                switch ($output_type) {
-                                        case 'flow':
-                                                $element_names = array('obs_time','flow');
-                                                $element_types = array('xs:datetime','xs:decimal');
-                                                $element_values = array(date(DATE_ATOM),null);
-                                                break;
-                                        case 'stage':
-                                        case 'stagethreshold':
-                                                $element_names = array('obs_time','stage');
-                                                $element_types = array('xs:datetime','xs:decimal');
-                                                $element_values = array(date(DATE_ATOM),null);
-                                                break;
-                                        case 'all':
-                                        default:
-                                                $element_names = array('obs_time','value');
-                                                $element_types = array('xs:datetime','xs:decimal');
-                                                $element_values = array(date(DATE_ATOM),null);
-                                                break;
-                                }
-                                // create the json array structure
-                                foreach ($element_names as $element_name) {
-                                }
-                                // create the fake record
-                        }
-                }
-
+			if (! $record_counter) {
+				/*
+				 * no records were in the XML string
+				 * do the json set up again, but this time with a fake record:
+				 *   current time stamp and a null value
+				 * note that this actually only works with flow/stage/stagethreshold types
+				 *   because those are the only types where we really know what the fields should be
+				 * however make up some fields for the other types so it still passes something back in the array
+				 */
+				switch ($output_type) {
+					case 'flow':
+						$element_names = array('obs_time','flow');
+						$element_types = array('xs:datetime','xs:decimal');
+						$element_values = array(date(DATE_ATOM),'-1.0');
+						break;
+					case 'stage':
+					case 'stagethreshold':
+						$element_names = array('obs_time','stage');
+						$element_types = array('xs:datetime','xs:decimal');
+						$element_values = array(date(DATE_ATOM),'-1.0');
+						break;
+					case 'all':
+					default:
+						$element_names = array('obs_time','value');
+						$element_types = array('xs:datetime','xs:decimal');
+						$element_values = array(date(DATE_ATOM),'-1.0');
+						break;
+				}
+				/* 
+				 * create the json array structure
+				 * simpler than before since all the defined fields are used
+				 * and there will only be one row
+				 */
+				$json_field_counter = 0;
+				$record_counter = 0;
+				foreach ($element_names as $element_name) {
+					$jsonarray["cols"][$json_field_counter]["id"] = $element_name;
+					$jsonarray["cols"][$json_field_counter]["label"] = $element_name;
+					$element_type = (string) $element_types[$json_field_counter];
+					$jsonarray["cols"][$json_field_counter]["type"] = xmltotypemap($element_type,$output_format,$output_gv_type);
+					$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = xmltovaluemap($element_values[$json_field_counter],$element_type,$output_format,$output_gv_type);
+					++$json_field_counter;
+				}
+			} // if (! $record_counter) {
+		} // if ($notempty) {
 	} catch (Exception $e) {
 	}
 	return $jsonarray;
@@ -255,17 +268,17 @@ function xmltotypemap($element_type,$output_format,$output_gv_type) {
 function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) {
 	switch ($element_type) {
 		case 'xs:integer':
-			$value = (integer) $child;
+			$value = (integer) $element;
 			break;
 		case 'xs:decimal':
-			$value = (real) $child;
+			$value = (real) $element;
 			break;
 		case 'xs:datetime':
 			switch (strtolower($output_format)) {
 				case 'json':
 					switch (strtolower($output_gv_type)) {
 						case 'combochart':
-							$thetimestamp = strtotime((string) $child);
+							$thetimestamp = strtotime((string) $element);
 							$thetimestamparray = getdate($thetimestamp);
 							$year = $thetimestamparray['year'];
 							$month = $thetimestamparray['mon'];
@@ -279,14 +292,14 @@ function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) {
 						case 'table':
 						case 'linechart':
 						default:
-							$value = str_replace("T"," ",(string) $child);
+							$value = str_replace("T"," ",(string) $element);
 					}
 					break;
 				case 'csv':
 				case 'html_table_2d':
 				case 'html_table_raw':
 				default:
-					$value = str_replace("T"," ",(string) $child);
+					$value = str_replace("T"," ",(string) $element);
 			}
 			break;
 		case 'xs:date':
@@ -294,7 +307,7 @@ function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) {
 				case 'json':
 					switch (strtolower($output_gv_type)) {
 						case 'combochart':
-							$thetimestamp = strtotime((string) $child);
+							$thetimestamp = strtotime((string) $element);
 							$thetimestamparray = getdate($thetimestamp);
 							// "new Date($yy,$mm,1,0,0,0)";
 							$year = $thetimestamparray['year'];
@@ -309,14 +322,14 @@ function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) {
 						case 'table':
 						case 'linechart':
 						default:
-							$value = str_replace("T"," ",(string) $child);
+							$value = str_replace("T"," ",(string) $element);
 					}
 					break;
 				case 'csv':
 				case 'html_table_2d':
 				case 'html_table_raw':
 				default:
-					$value = str_replace("T"," ",(string) $child);
+					$value = str_replace("T"," ",(string) $element);
 			}
 			break;
 		case 'xs:time':
@@ -324,7 +337,7 @@ function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) {
 				case 'json':
 					switch (strtolower($output_gv_type)) {
 						case 'combochart':
-							$thetimestamp = strtotime((string) $child);
+							$thetimestamp = strtotime((string) $element);
 							$thetimestamparray = getdate($thetimestamp);
 							// "new Date($yy,$mm,1,0,0,0)";
 							$year = $thetimestamparray['year'];
@@ -339,19 +352,19 @@ function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) {
 						case 'table':
 						case 'linechart':
 						default:
-							$value = str_replace("T"," ",(string) $child);
+							$value = str_replace("T"," ",(string) $element);
 					}
 					break;
 				case 'csv':
 				case 'html_table_2d':
 				case 'html_table_raw':
 				default:
-					$value = str_replace("T"," ",(string) $child);
+					$value = str_replace("T"," ",(string) $element);
 			}
 			break;
 		case 'xs:string':
 		default:
-			$value = (string) $child;
+			$value = (string) $element;
 	}
 	return $value;
 }
