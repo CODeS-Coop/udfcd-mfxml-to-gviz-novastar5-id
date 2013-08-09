@@ -102,7 +102,7 @@ function wfxml_to_jsonarray_novastar5_disprpts_xml_id ($wfxml_string,$output_typ
 						$jsonarray["cols"][$json_field_counter]["id"] = $element_name;
 						$jsonarray["cols"][$json_field_counter]["label"] = $element_name;
 						$element_type = (string) $child->attributes()->type;
-						$jsonarray["cols"][$json_field_counter]["type"] = xxx($element_type,$output_format,$output_gv_type);
+						$jsonarray["cols"][$json_field_counter]["type"] = xmltotypemap($element_type,$output_format,$output_gv_type);
 						++$json_field_counter;
 					} else {
 						$json_include[$field_counter] = FALSE;
@@ -117,37 +117,40 @@ function wfxml_to_jsonarray_novastar5_disprpts_xml_id ($wfxml_string,$output_typ
 				$element_name = (string) $child->getName();
 				if ($json_include[$field_counter]) {
 					$element_type = (string) $child->attributes()->type;
-					// xxx
 					$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = xmltovaluemap($child,$element_type,$output_format,$output_gv_type);
 					++$json_field_counter;
 				}
 				++$field_counter;
 			}
 			++$record_counter;
-		}
+		} // foreach( $wfxml as $row ) 
 		if ($notempty) {
                         if (! $record_counter) {
                                 /*
                                  * uh oh - no records were in the XML string
-                                 * create a fake record with a current time stamp and a null value
+                                 * do the json set up again, but this time with a fake record:
+                                 *   current time stamp and a null value
                                  * note that this really only works with flow/stage/stagethreshold types
-                                 * because those are the only types where we know what the fields should be
-                                 * however, just make up some for the other type so it still passes a nonempty array back
+                                 *   because those are the only types where we know what the fields should be
+                                 * but make up some fields for the other types so it still passes something back in the array
                                  */
                                 switch ($output_type) {
                                         case 'flow':
                                                 $element_names = array('obs_time','flow');
                                                 $element_types = array('xs:datetime','xs:decimal');
+                                                $element_values = array(date(DATE_ATOM),null);
                                                 break;
                                         case 'stage':
                                         case 'stagethreshold':
                                                 $element_names = array('obs_time','stage');
                                                 $element_types = array('xs:datetime','xs:decimal');
+                                                $element_values = array(date(DATE_ATOM),null);
                                                 break;
                                         case 'all':
                                         default:
                                                 $element_names = array('obs_time','value');
                                                 $element_types = array('xs:datetime','xs:decimal');
+                                                $element_values = array(date(DATE_ATOM),null);
                                                 break;
                                 }
                                 // create the json array structure
@@ -168,7 +171,7 @@ function wfxml_to_jsonarray_novastar5_disprpts_xml_id ($wfxml_string,$output_typ
  * output structure field type.  Needs the output format and output gv type
  * 
  */
-function xmltogvizjsonfieldtypemap($element_type,$output_format,$output_gv_type) {
+function xmltotypemap($element_type,$output_format,$output_gv_type) {
 	switch ($element_type) {
 		case 'xs:date':
 			switch (strtolower($output_format)) {
@@ -252,10 +255,10 @@ function xmltogvizjsonfieldtypemap($element_type,$output_format,$output_gv_type)
 function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) {
 	switch ($element_type) {
 		case 'xs:integer':
-			$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = (integer) $child;
+			$value = (integer) $child;
 			break;
 		case 'xs:decimal':
-			$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = (real) $child;
+			$value = (real) $child;
 			break;
 		case 'xs:datetime':
 			switch (strtolower($output_format)) {
@@ -270,19 +273,20 @@ function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) {
 							$hour = $thetimestamparray['hours'];
 							$minute = $thetimestamparray['minutes'];
 							$second = $thetimestamparray['seconds'];
-							$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = "new Date($year,$month-1,$day,$hour,$minute,$second)";
+							// here is a pretty little gem of a line that makes everything work with GViz!!
+							$value = "new Date($year,$month-1,$day,$hour,$minute,$second)";
 							break;
 						case 'table':
 						case 'linechart':
 						default:
-							$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
+							$value = str_replace("T"," ",(string) $child);
 					}
 					break;
 				case 'csv':
 				case 'html_table_2d':
 				case 'html_table_raw':
 				default:
-					$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
+					$value = str_replace("T"," ",(string) $child);
 			}
 			break;
 		case 'xs:date':
@@ -299,19 +303,20 @@ function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) {
 							$hour = $thetimestamparray['hours'];
 							$minute = $thetimestamparray['minutes'];
 							$second = $thetimestamparray['seconds'];
-							$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = "new Date($year,$month-1,$day,$hour,$minute,$second)";
+							// here is a pretty little gem of a line that makes everything work with GViz!!
+							$value = "new Date($year,$month-1,$day,$hour,$minute,$second)";
 							break;
 						case 'table':
 						case 'linechart':
 						default:
-							$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
+							$value = str_replace("T"," ",(string) $child);
 					}
 					break;
 				case 'csv':
 				case 'html_table_2d':
 				case 'html_table_raw':
 				default:
-					$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
+					$value = str_replace("T"," ",(string) $child);
 			}
 			break;
 		case 'xs:time':
@@ -328,24 +333,25 @@ function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) {
 							$hour = $thetimestamparray['hours'];
 							$minute = $thetimestamparray['minutes'];
 							$second = $thetimestamparray['seconds'];
-							$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = "new Date($year,$month-1,$day,$hour,$minute,$second)";
+							// here is a pretty little gem of a line that makes everything work with GViz!!
+							$value = "new Date($year,$month-1,$day,$hour,$minute,$second)";
 							break;
 						case 'table':
 						case 'linechart':
 						default:
-							$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
+							$value = str_replace("T"," ",(string) $child);
 					}
 					break;
 				case 'csv':
 				case 'html_table_2d':
 				case 'html_table_raw':
 				default:
-					$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
+					$value = str_replace("T"," ",(string) $child);
 			}
 			break;
 		case 'xs:string':
 		default:
-			$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = (string) $child;
+			$value = (string) $child;
 	}
 	return $value;
 }
