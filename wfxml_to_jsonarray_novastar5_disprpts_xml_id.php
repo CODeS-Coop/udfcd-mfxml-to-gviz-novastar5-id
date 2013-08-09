@@ -290,6 +290,37 @@ function wfxml_to_jsonarray_novastar5_disprpts_xml_id ($wfxml_string,$output_typ
 			}
 			++$record_counter;
 		}
+		if ($notempty) {
+			if (! $record_counter) {
+				/*
+				 * uh oh - no records were in the XML string
+				 * create a fake record with a current time stamp and a null value
+				 * note that this really only works with flow/stage/stagethreshold types
+				 * because those are the only types where we know what the fields should be
+				 * however, just make up some for the other type so it still passes a nonempty array back
+				 */
+				switch ($output_type) {
+					case 'flow':
+						$element_names = array('obs_time','flow');
+						$element_types = array('xs:datetime','xs:decimal');
+						break;
+					case 'stage':
+					case 'stagethreshold':
+						$element_names = array('obs_time','stage');
+						$element_types = array('xs:datetime','xs:decimal');
+						break;
+					case 'all':
+					default:
+						$element_names = array('obs_time','value');
+						$element_types = array('xs:datetime','xs:decimal');
+						break;
+				}
+				// create the json array structure
+				foreach ($element_names as $element_name) {
+				}
+				// create the fake record
+ 			}
+		}
 	} catch (Exception $e) {
 	}
 	return $jsonarray;
