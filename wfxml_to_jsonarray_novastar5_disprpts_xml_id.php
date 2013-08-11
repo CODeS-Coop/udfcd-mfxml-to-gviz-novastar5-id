@@ -21,7 +21,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-function wfxml_to_jsonarray_novastar5_disprpts_xml_id ($wfxml_string,$output_type='all',$output_format='json',$output_gv_type='table') {
+function wfxml_to_jsonarray_novastar5_disprpts_xml_id ($wfxml_string,$output_type='all',$output_format='json',$output_gv_type='table',$notempty=FALSE) {
 	/*
 	 * read the incoming xml and populate the outgoing array
 	 */
@@ -102,77 +102,7 @@ function wfxml_to_jsonarray_novastar5_disprpts_xml_id ($wfxml_string,$output_typ
 						$jsonarray["cols"][$json_field_counter]["id"] = $element_name;
 						$jsonarray["cols"][$json_field_counter]["label"] = $element_name;
 						$element_type = (string) $child->attributes()->type;
-						switch ($element_type) {
-							case 'xs:date':
-								switch (strtolower($output_format)) {
-									case 'json':
-										switch (strtolower($output_gv_type)) {
-											case 'combochart':
-												$jsonarray["cols"][$json_field_counter]["type"] = "date";
-												break;
-											case 'table':
-											case 'linechart':
-											default:
-												$jsonarray["cols"][$json_field_counter]["type"] = "string";
-										}
-										break;
-									case 'csv':
-									case 'html_table_2d':
-									case 'html_table_raw':
-									default:
-										$jsonarray["cols"][$json_field_counter]["type"] = "string";
-								}
-								break;
-							case 'xs:time':
-								switch (strtolower($output_format)) {
-									case 'json':
-										switch (strtolower($output_gv_type)) {
-											case 'combochart':
-												$jsonarray["cols"][$json_field_counter]["type"] = "timeofday";
-												break;
-											case 'table':
-											case 'linechart':
-											default:
-												$jsonarray["cols"][$json_field_counter]["type"] = "string";
-										}
-										break;
-									case 'csv':
-									case 'html_table_2d':
-									case 'html_table_raw':
-									default:
-										$jsonarray["cols"][$json_field_counter]["type"] = "string";
-								}
-								break;
-							case 'xs:datetime':
-								switch (strtolower($output_format)) {
-									case 'json':
-										switch (strtolower($output_gv_type)) {
-											case 'combochart':
-												$jsonarray["cols"][$json_field_counter]["type"] = "datetime";
-												break;
-											case 'table':
-											case 'linechart':
-											default:
-												$jsonarray["cols"][$json_field_counter]["type"] = "string";
-										}
-										break;
-									case 'csv':
-									case 'html_table_2d':
-									case 'html_table_raw':
-									default:
-										$jsonarray["cols"][$json_field_counter]["type"] = "string";
-								}
-								break;
-							case 'xs:string':
-								$jsonarray["cols"][$json_field_counter]["type"] = "text";
-								break;
-							case 'xs:integer':
-							case 'xs:decimal':
-								$jsonarray["cols"][$json_field_counter]["type"] = "number";
-								break;
-							default:
-								$jsonarray["cols"][$json_field_counter]["type"] = "text";
-						}
+						$jsonarray["cols"][$json_field_counter]["type"] = xmltotypemap($element_type,$output_format,$output_gv_type);
 						++$json_field_counter;
 					} else {
 						$json_include[$field_counter] = FALSE;
@@ -187,111 +117,255 @@ function wfxml_to_jsonarray_novastar5_disprpts_xml_id ($wfxml_string,$output_typ
 				$element_name = (string) $child->getName();
 				if ($json_include[$field_counter]) {
 					$element_type = (string) $child->attributes()->type;
-					switch ($element_type) {
-						case 'xs:integer':
-							$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = (integer) $child;
-							break;
-						case 'xs:decimal':
-							$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = (real) $child;
-							break;
-						case 'xs:datetime':
-							switch (strtolower($output_format)) {
-								case 'json':
-									switch (strtolower($output_gv_type)) {
-										case 'combochart':
-											$thetimestamp = strtotime((string) $child);
-											$thetimestamparray = getdate($thetimestamp);
-											$year = $thetimestamparray['year'];
-											$month = $thetimestamparray['mon'];
-											$day = $thetimestamparray['mday'];
-											$hour = $thetimestamparray['hours'];
-											$minute = $thetimestamparray['minutes'];
-											$second = $thetimestamparray['seconds'];
-											$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = "new Date($year,$month-1,$day,$hour,$minute,$second)";
-											break;
-										case 'table':
-										case 'linechart':
-										default:
-											$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
-									}
-									break;
-								case 'csv':
-								case 'html_table_2d':
-								case 'html_table_raw':
-								default:
-									$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
-							}
-							break;
-						case 'xs:date':
-							switch (strtolower($output_format)) {
-								case 'json':
-									switch (strtolower($output_gv_type)) {
-										case 'combochart':
-											$thetimestamp = strtotime((string) $child);
-											$thetimestamparray = getdate($thetimestamp);
-											// "new Date($yy,$mm,1,0,0,0)";
-											$year = $thetimestamparray['year'];
-											$month = $thetimestamparray['mon'];
-											$day = $thetimestamparray['mday'];
-											$hour = $thetimestamparray['hours'];
-											$minute = $thetimestamparray['minutes'];
-											$second = $thetimestamparray['seconds'];
-											$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = "new Date($year,$month-1,$day,$hour,$minute,$second)";
-											break;
-										case 'table':
-										case 'linechart':
-										default:
-											$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
-									}
-									break;
-								case 'csv':
-								case 'html_table_2d':
-								case 'html_table_raw':
-								default:
-									$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
-							}
-							break;
-						case 'xs:time':
-							switch (strtolower($output_format)) {
-								case 'json':
-									switch (strtolower($output_gv_type)) {
-										case 'combochart':
-											$thetimestamp = strtotime((string) $child);
-											$thetimestamparray = getdate($thetimestamp);
-											// "new Date($yy,$mm,1,0,0,0)";
-											$year = $thetimestamparray['year'];
-											$month = $thetimestamparray['mon'];
-											$day = $thetimestamparray['mday'];
-											$hour = $thetimestamparray['hours'];
-											$minute = $thetimestamparray['minutes'];
-											$second = $thetimestamparray['seconds'];
-											$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = "new Date($year,$month-1,$day,$hour,$minute,$second)";
-											break;
-										case 'table':
-										case 'linechart':
-										default:
-											$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
-									}
-									break;
-								case 'csv':
-								case 'html_table_2d':
-								case 'html_table_raw':
-								default:
-									$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = str_replace("T"," ",(string) $child);
-							}
-							break;
-						case 'xs:string':
-						default:
-							$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = (string) $child;
-					}
+					$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = xmltovaluemap($child,$element_type,$output_format,$output_gv_type);
 					++$json_field_counter;
 				}
 				++$field_counter;
 			}
 			++$record_counter;
-		}
+		} // foreach( $wfxml as $row )
+		/*
+		 * check if we need to fill an empty array structure
+		 */ 
+		if ($notempty) {
+			if (! $record_counter) {
+				/*
+				 * no records were in the XML string
+				 * do the json set up again, but this time with a fake record:
+				 *   current time stamp and a null value
+				 * note that this actually only works with flow/stage/stagethreshold types
+				 *   because those are the only types where we really know what the fields should be
+				 * however make up some fields for the other types so it still passes something back in the array
+				 */
+				switch ($output_type) {
+					case 'flow':
+						$element_names = array('obs_time','flow');
+						$element_types = array('xs:datetime','xs:decimal');
+						$element_values = array(date(DATE_ATOM),'-1.0');
+						break;
+					case 'stage':
+					case 'stagethreshold':
+						$element_names = array('obs_time','stage');
+						$element_types = array('xs:datetime','xs:decimal');
+						$element_values = array(date(DATE_ATOM),'-1.0');
+						break;
+					case 'all':
+					default:
+						$element_names = array('obs_time','value');
+						$element_types = array('xs:datetime','xs:decimal');
+						$element_values = array(date(DATE_ATOM),'-1.0');
+						break;
+				}
+				/* 
+				 * create the json array structure
+				 * simpler than before since all the defined fields are used
+				 * and there will only be one row
+				 */
+				$json_field_counter = 0;
+				$record_counter = 0;
+				foreach ($element_names as $element_name) {
+					$jsonarray["cols"][$json_field_counter]["id"] = $element_name;
+					$jsonarray["cols"][$json_field_counter]["label"] = $element_name;
+					$element_type = (string) $element_types[$json_field_counter];
+					$jsonarray["cols"][$json_field_counter]["type"] = xmltotypemap($element_type,$output_format,$output_gv_type);
+					$jsonarray["rows"][$record_counter]["c"][$json_field_counter]["v"] = xmltovaluemap($element_values[$json_field_counter],$element_type,$output_format,$output_gv_type);
+					++$json_field_counter;
+				}
+			} // if (! $record_counter) {
+		} // if ($notempty) {
 	} catch (Exception $e) {
 	}
 	return $jsonarray;
+}
+/*
+ * function xmltofieldtypemap($element_type,$output_format,$output_gv_type) 
+ * 
+ * this function converts a specified XML element type into the appropriate 
+ * output structure field type.  Needs the output format and output gv type
+ * 
+ */
+function xmltotypemap($element_type,$output_format,$output_gv_type) {
+	switch ($element_type) {
+		case 'xs:date':
+			switch (strtolower($output_format)) {
+				case 'json':
+					switch (strtolower($output_gv_type)) {
+						case 'combochart':
+							$fieldtype = "date";
+							break;
+						case 'table':
+						case 'linechart':
+						default:
+							$fieldtype = "string";
+					}
+					break;
+				case 'csv':
+				case 'html_table_2d':
+				case 'html_table_raw':
+				default:
+					$fieldtype = "string";
+			}
+			break;
+		case 'xs:time':
+			switch (strtolower($output_format)) {
+				case 'json':
+					switch (strtolower($output_gv_type)) {
+						case 'combochart':
+							$fieldtype = "timeofday";
+							break;
+						case 'table':
+						case 'linechart':
+						default:
+							$fieldtype = "string";
+					}
+					break;
+				case 'csv':
+				case 'html_table_2d':
+				case 'html_table_raw':
+				default:
+					$fieldtype = "string";
+			}
+			break;
+		case 'xs:datetime':
+			switch (strtolower($output_format)) {
+				case 'json':
+					switch (strtolower($output_gv_type)) {
+						case 'combochart':
+							$fieldtype = "datetime";
+							break;
+						case 'table':
+						case 'linechart':
+						default:
+							$fieldtype = "string";
+					}
+					break;
+				case 'csv':
+				case 'html_table_2d':
+				case 'html_table_raw':
+				default:
+					$fieldtype = "string";
+			}
+			break;
+		case 'xs:string':
+			$fieldtype = "text";
+			break;
+		case 'xs:integer':
+		case 'xs:decimal':
+			$fieldtype = "number";
+			break;
+		default:
+			$fieldtype = "text";
+	}
+	return $fieldtype;
+}
+/*
+ * function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) 
+ * 
+ * this function converts a specified XML element type into the appropriate 
+ * output structure field type.  Needs the output format and output gv type
+ * 
+ */
+function xmltovaluemap($element,$element_type,$output_format,$output_gv_type) {
+	switch ($element_type) {
+		case 'xs:integer':
+			$value = (integer) $element;
+			break;
+		case 'xs:decimal':
+			$value = (real) $element;
+			break;
+		case 'xs:datetime':
+			switch (strtolower($output_format)) {
+				case 'json':
+					switch (strtolower($output_gv_type)) {
+						case 'combochart':
+							$thetimestamp = strtotime((string) $element);
+							$thetimestamparray = getdate($thetimestamp);
+							$year = $thetimestamparray['year'];
+							$month = $thetimestamparray['mon'];
+							$day = $thetimestamparray['mday'];
+							$hour = $thetimestamparray['hours'];
+							$minute = $thetimestamparray['minutes'];
+							$second = $thetimestamparray['seconds'];
+							// here is a pretty little gem of a line that makes everything work with GViz!!
+							$value = "new Date($year,$month-1,$day,$hour,$minute,$second)";
+							break;
+						case 'table':
+						case 'linechart':
+						default:
+							$value = str_replace("T"," ",(string) $element);
+					}
+					break;
+				case 'csv':
+				case 'html_table_2d':
+				case 'html_table_raw':
+				default:
+					$value = str_replace("T"," ",(string) $element);
+			}
+			break;
+		case 'xs:date':
+			switch (strtolower($output_format)) {
+				case 'json':
+					switch (strtolower($output_gv_type)) {
+						case 'combochart':
+							$thetimestamp = strtotime((string) $element);
+							$thetimestamparray = getdate($thetimestamp);
+							// "new Date($yy,$mm,1,0,0,0)";
+							$year = $thetimestamparray['year'];
+							$month = $thetimestamparray['mon'];
+							$day = $thetimestamparray['mday'];
+							$hour = $thetimestamparray['hours'];
+							$minute = $thetimestamparray['minutes'];
+							$second = $thetimestamparray['seconds'];
+							// here is a pretty little gem of a line that makes everything work with GViz!!
+							$value = "new Date($year,$month-1,$day,$hour,$minute,$second)";
+							break;
+						case 'table':
+						case 'linechart':
+						default:
+							$value = str_replace("T"," ",(string) $element);
+					}
+					break;
+				case 'csv':
+				case 'html_table_2d':
+				case 'html_table_raw':
+				default:
+					$value = str_replace("T"," ",(string) $element);
+			}
+			break;
+		case 'xs:time':
+			switch (strtolower($output_format)) {
+				case 'json':
+					switch (strtolower($output_gv_type)) {
+						case 'combochart':
+							$thetimestamp = strtotime((string) $element);
+							$thetimestamparray = getdate($thetimestamp);
+							// "new Date($yy,$mm,1,0,0,0)";
+							$year = $thetimestamparray['year'];
+							$month = $thetimestamparray['mon'];
+							$day = $thetimestamparray['mday'];
+							$hour = $thetimestamparray['hours'];
+							$minute = $thetimestamparray['minutes'];
+							$second = $thetimestamparray['seconds'];
+							// here is a pretty little gem of a line that makes everything work with GViz!!
+							$value = "new Date($year,$month-1,$day,$hour,$minute,$second)";
+							break;
+						case 'table':
+						case 'linechart':
+						default:
+							$value = str_replace("T"," ",(string) $element);
+					}
+					break;
+				case 'csv':
+				case 'html_table_2d':
+				case 'html_table_raw':
+				default:
+					$value = str_replace("T"," ",(string) $element);
+			}
+			break;
+		case 'xs:string':
+		default:
+			$value = (string) $element;
+	}
+	return $value;
 }
 ?>
